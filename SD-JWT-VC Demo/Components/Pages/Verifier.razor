@@ -1,0 +1,78 @@
+﻿@rendermode InteractiveServer
+@page "/verifier"
+@using SD_JWT_VC_Demo.Services
+@using Microsoft.JSInterop;
+@inject IJSRuntime JSRuntime
+@inject VerifierService VerifierService
+
+<PageTitle>Verifier</PageTitle>
+
+<h3>Verifier</h3>
+
+<label>Token Request</label>
+<div class="input-group mb-3">
+    <input class="form-control" readonly type="text" value="@TokenRequest" />
+    <button type="button" class="btn btn-primary" @onclick="CopyTextToClipboard">Copy</button>
+</div>
+
+<label>Nonce</label>
+<div class="input-group mb-3">
+    <input class="form-control" readonly type="text" value="@Nonce" />
+</div>
+
+<label>Create Disclosed Token Request</label>
+<div class="input-group mb-3">
+    <button type="button" class="btn btn-primary" @onclick="CreateDisclosedTokenRequest">Create</button>
+</div>
+
+<label>Disclosed Token</label>
+<div class="input-group mb-3">
+    <input class="form-control" type="text" @bind-value="DisclosedToken" />
+    <button type="button" class="btn btn-primary" @onclick="VerifyDisclosedToken">Verify</button>
+</div>
+
+<label>Verification Status</label>
+<div class="input-group mb-3">
+    <input class="form-control" readonly type="text" value="@VerificationStatus" />
+</div>
+
+<label>Claims</label>
+<div class="input-group mb-3">
+    <InputTextArea class="form-control" readonly type="text" @bind-Value="VerifiedClaims" />
+</div>
+
+@code {
+    private string TokenRequest = string.Empty;
+    private string DisclosedToken = string.Empty;
+    private string Nonce = string.Empty;
+    private string VerificationStatus = string.Empty;
+    private string VerifiedClaims = string.Empty;
+
+    private async Task CopyTextToClipboard()
+    {
+        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", TokenRequest);
+    }
+
+    private async Task CreateDisclosedTokenRequest()
+    {
+        var tokenRequest = VerifierService.CreateDisclosedTokenRequest();
+        TokenRequest = System.Text.Json.JsonSerializer.Serialize(tokenRequest);
+        Nonce = tokenRequest.nonce;
+    }
+
+    private async Task VerifyDisclosedToken()
+    {
+        try
+        {
+            var claims = VerifierService.ValidateTokenAndGetClaims(DisclosedToken, Nonce);
+            VerificationStatus = "Success";
+            VerifiedClaims = string.Join("\r\n", claims.Select(x => x.Key + " = " + x.Value));
+        }
+        catch (Exception ex)
+        {
+            VerificationStatus = "Failed: " + ex.Message;
+            VerifiedClaims = string.Empty;
+        }
+        
+    }
+}

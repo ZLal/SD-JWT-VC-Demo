@@ -1,0 +1,39 @@
+﻿@rendermode InteractiveServer
+@page "/issuer"
+@using SD_JWT_VC_Demo.Services
+@using Microsoft.JSInterop;
+@inject IJSRuntime JSRuntime
+@inject IssuerService IssuerService
+
+<PageTitle>Issuer</PageTitle>
+
+<h3>Issuer</h3>
+
+<label>Public key</label>
+<div class="input-group mb-3">
+    <input class="form-control" readonly type="text" value="@IssuerService.PublicKey" />
+    <button type="button" class="btn btn-primary" @onclick="() => CopyTextToClipboard(IssuerService.PublicKey)">Copy</button>
+</div>
+
+<label>Issuer Token</label>
+<div class="input-group mb-3">
+    <input class="form-control" readonly type="text" value="@IssuerToken" />
+    <button type="button" class="btn btn-primary" @onclick="() => CopyTextToClipboard(IssuerToken)">Copy</button>
+</div>
+
+<button class="btn btn-primary" @onclick="GenerateToken">Generate Token</button>
+
+@code {
+    private string IssuerToken = string.Empty;
+
+    private void GenerateToken()
+    {
+        Dictionary<string, string> privateData = IssuerService.CreateHolderPrivateData();
+        IssuerToken = IssuerService.CreateTokenWithDisclosedData(privateData);
+    }
+
+    private async Task CopyTextToClipboard(string value)
+    {
+        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", value);
+    }
+}

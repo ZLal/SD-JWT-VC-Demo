@@ -1,0 +1,59 @@
+﻿@rendermode InteractiveServer
+@page "/holder"
+@using System.Text.Json
+@using SD_JWT_VC_Demo.Services
+@using Microsoft.JSInterop;
+@inject IJSRuntime JSRuntime
+@inject HolderService HolderService
+
+<PageTitle>Holder</PageTitle>
+
+<h3>Holder</h3>
+
+<label>Public key</label>
+<div class="input-group mb-3">
+    <input class="form-control" readonly type="text" value="@HolderService.PublicKey" />
+    <button type="button" class="btn btn-primary" @onclick="() => CopyTextToClipboard(HolderService.PublicKey)">Copy</button>
+</div>
+
+<label>Issuer Token</label>
+<div class="input-group mb-3">
+    <input class="form-control" type="text" @bind-value="@IssuerToken" />
+</div>
+
+<label>Disclosed Token Request</label>
+<div class="input-group mb-3">
+    <input class="form-control" type="text" @bind-value="DisclosedTokenRequest" />
+    <button type="button" class="btn btn-primary" @onclick="GenerateDisclosedToken">Generate Disclosed Token</button>
+</div>
+
+<label>Disclosed token</label>
+<div class="input-group mb-3">
+    <input class="form-control" readonly type="text" value="@DisclosedToken" />
+    <button type="button" class="btn btn-primary" @onclick="() => CopyTextToClipboard(DisclosedToken)">Copy</button>
+</div>
+
+@code {
+    private string IssuerToken = string.Empty;
+    private string DisclosedTokenRequest = string.Empty;
+    private string DisclosedToken = string.Empty;
+
+    private async Task CopyTextToClipboard(string value)
+    {
+        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", value);
+    }
+
+    private async Task GenerateDisclosedToken()
+    {
+        try
+        {
+            var tokenRequest = JsonSerializer.Deserialize<Models.DisclosedTokenRequest>(DisclosedTokenRequest)
+                ?? throw new Exception("Failed to deserialize token request");
+            DisclosedToken = HolderService.CreateDisclosedToken(IssuerToken, tokenRequest);
+        }
+        catch (Exception ex)
+        {
+            DisclosedToken = "Error: " + ex.Message;
+        }
+    }
+}
